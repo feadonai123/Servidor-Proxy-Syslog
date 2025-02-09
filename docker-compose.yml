@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  rsyslog:
+    build:
+      context: .  # Isso indica que o Dockerfile está no mesmo diretório
+      dockerfile: Dockerfile-syslog  # Especifica que deve usar o arquivo Dockerfile
+    container_name: syslog_server
+    ports:
+      - "514:514/udp"  # Expondo a porta UDP 514 para receber logs
+    volumes:
+      - ./rsyslog.conf:/etc/rsyslog.conf  # Montando o arquivo de configuração customizado
+      - ./log:/var/log  # Montando a pasta de logs para o contêiner
+    command: rsyslogd -n  # Forçando o rsyslogd a rodar no primeiro plano
+    restart: always  # Garantindo que o contêiner reinicie automaticamente se parar
+    networks:
+      - syslog_net  # Criando uma rede para comunicação entre os contêineres
+
+  python:
+    build:
+      context: .  # Isso indica que o Dockerfile está no mesmo diretório
+      dockerfile: Dockerfile-python  # Usando o Dockerfile-python para criar o contêiner Python
+    container_name: python_container
+    ports:
+      - "8888:8888"  # Expondo a porta 8080 para acessar o servidor proxy
+    stdin_open: true  # Permitindo interação com o terminal
+    tty: true  # Permitindo a interação com o terminal
+    command: ["python3", "/usr/local/bin/proxy.py"]
+    depends_on:
+      - rsyslog  # Certificando-se de que o rsyslog esteja ativo antes de iniciar o Python
+    networks:
+      - syslog_net  # Garantindo que a rede syslog_net seja compartilhada
+    volumes:
+      - ./proxy.py:/usr/local/bin/proxy.py  # Montando o script Python no contêiner
+
+networks:
+  syslog_net:
+    driver: bridge  # Criando uma rede bridge para comunicação entre os contêineres
+    

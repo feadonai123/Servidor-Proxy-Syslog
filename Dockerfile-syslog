@@ -1,0 +1,14 @@
+# Use uma imagem base com Debian
+FROM debian
+
+# Atualizar e instalar o rsyslog
+RUN apt-get update && apt-get install -y rsyslog
+
+# Copiar a configuração do rsyslog para o contêiner
+COPY rsyslog.conf /etc/rsyslog.conf
+
+# Expôr a porta 514 para comunicação de logs (padrão Syslog)
+EXPOSE 514/udp
+
+# Iniciar o rsyslog no contêiner
+CMD ["rsyslog", "-n"]
